@@ -1,0 +1,136 @@
+{
+  "channel": {
+    "name": "GTOON FAST",
+    "timezone": "Asia/Riyadh",
+    "logo": "assets/logo.png"
+  },
+
+  "bumpers": [
+    {
+      "id": "bumper_intro",
+      "title": "فاصل هوية القناة",
+      "url": "https://example.com/bumpers/gtoon_bumper.mp4",
+      "duration": 15
+    },
+    {
+      "id": "bumper_brb",
+      "title": "نعود بعد قليل",
+      "url": "https://example.com/bumpers/brb.mp4",
+      "duration": 10
+    },
+    {
+      "id": "bumper_back",
+      "title": "عدنا",
+      "url": "https://example.com/bumpers/back.mp4",
+      "duration": 8
+    }
+  ],
+
+  "ads": [
+    {
+      "id": "ad_1",
+      "title": "إعلان 1",
+      "url": "https://example.com/ads/ad1.mp4",
+      "duration": 30,
+      "maxPlaysPerDay": 10
+    },
+    {
+      "id": "ad_2",
+      "title": "إعلان 2",
+      "url": "https://example.com/ads/ad2.mp4",
+      "duration": 20,
+      "maxPlaysPerDay": 8
+    }
+  ],
+
+  "backupLibrary": [
+    {
+      "id": "backup_1",
+      "title": "توم وجيري - حلقة خاصة",
+      "url": "https://example.com/backup/tom_special.mp4",
+      "duration": 420
+    },
+    {
+      "id": "backup_2",
+      "title": "مغامرات ممتعة",
+      "url": "https://example.com/backup/fun_adventures.mp4",
+      "duration": 600
+    },
+    {
+      "id": "backup_3",
+      "title": "كرتون كلاسيكي",
+      "url": "https://example.com/backup/classic.mp4",
+      "duration": 480
+    }
+  ],
+
+  "emergencyContent": {
+    "title": "GTOON FAST - نعود قريباً",
+    "url": "https://example.com/emergency/we_will_be_back.mp4",
+    "duration": 60,
+    "loop": true
+  },
+
+  "weeklySchedule": {
+    "sunday": [
+      {
+        "start": "00:00",
+        "title": "توم وجيري",
+        "type": "program",
+        "episodes": [
+          { "title": "حلقة 1", "url": "https://example.com/tom/ep1.mp4", "duration": 420 },
+          { "title": "حلقة 2", "url": "https://example.com/tom/ep2.mp4", "duration": 430 },
+          { "title": "حلقة 3", "url": "https://example.com/tom/ep3.mp4", "duration": 415 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "00:25",
+        "title": "بن 10",
+        "type": "program",
+        "episodes": [
+          { "title": "حلقة 1", "url": "https://example.com/ben10/ep1.mp4", "duration": 1320 },
+          { "title": "حلقة 2", "url": "https://example.com/ben10/ep2.mp4", "duration": 1300 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "01:10",
+        "title": "مغامرات جديدة",
+        "type": "program",
+        "episodes": [
+          { "title": "حلقة 1", "url": "https://example.com/adventures/ep1.mp4", "duration": 900 }
+        ],
+        "adBreakAfter": false
+      },
+      {
+        "start": "08:00",
+        "title": "صباح الكرتون",
+        "type": "program",
+        "episodes": [
+          { "title": "حلقة 1", "url": "https://example.com/morning/ep1.mp4", "duration": 1200 },
+          { "title": "حلقة 2", "url": "https://example.com/morning/ep2.mp4", "duration": 1180 }
+        ],
+        "adBreakAfter": true
+      }
+    ],
+
+    "monday": [
+      {
+        "start": "08:00",
+        "title": "توم وجيري",
+        "type": "program",
+        "episodes": [
+          { "title": "حلقة 4", "url": "https://example.com/tom/ep4.mp4", "duration": 420 }
+        ],
+        "adBreakAfter": true
+      }
+    ],
+
+    "tuesday": [],
+    "wednesday": [],
+    "thursday": [],
+    "friday": [],
+    "saturday": []
+  }
+}
