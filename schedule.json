@@ -7,67 +7,70 @@
 
   "bumpers": [
     {
-      "id": "bumper_intro",
-      "title": "فاصل هوية القناة",
-      "url": "https://example.com/bumpers/gtoon_bumper.mp4",
-      "duration": 15
+      "id": "bumper_1",
+      "title": "فاصل GTOON 1",
+      "url": "https://e.top4top.io/m_37268trrl0.mp4",
+      "duration": 0
     },
     {
-      "id": "bumper_brb",
-      "title": "نعود بعد قليل",
-      "url": "https://example.com/bumpers/brb.mp4",
-      "duration": 10
+      "id": "bumper_2",
+      "title": "فاصل GTOON 2",
+      "url": "https://l.top4top.io/m_3725t7wc20.mp4",
+      "duration": 0
     },
     {
-      "id": "bumper_back",
-      "title": "عدنا",
-      "url": "https://example.com/bumpers/back.mp4",
-      "duration": 8
+      "id": "bumper_3",
+      "title": "فاصل GTOON 3",
+      "url": "https://b.top4top.io/m_3726s0drk0.mp4",
+      "duration": 0
+    },
+    {
+      "id": "bumper_4",
+      "title": "فاصل GTOON 4",
+      "url": "https://d.top4top.io/m_37263w1vm0.mp4",
+      "duration": 0
+    },
+    {
+      "id": "bumper_5",
+      "title": "فاصل GTOON 5",
+      "url": "https://e.top4top.io/m_37268trrl0.mp4",
+      "duration": 0
+    },
+    {
+      "id": "bumper_6",
+      "title": "فاصل GTOON 6",
+      "url": "https://g.top4top.io/m_3726q7ejs0.mp4",
+      "duration": 0
     }
   ],
 
-  "ads": [
-    {
-      "id": "ad_1",
-      "title": "إعلان 1",
-      "url": "https://example.com/ads/ad1.mp4",
-      "duration": 30,
-      "maxPlaysPerDay": 10
-    },
-    {
-      "id": "ad_2",
-      "title": "إعلان 2",
-      "url": "https://example.com/ads/ad2.mp4",
-      "duration": 20,
-      "maxPlaysPerDay": 8
-    }
-  ],
+  "ads": [],
 
   "backupLibrary": [
     {
-      "id": "backup_1",
-      "title": "توم وجيري - حلقة خاصة",
-      "url": "https://example.com/backup/tom_special.mp4",
-      "duration": 420
+      "id": "kim_backup_1",
+      "title": "كيم بوسيبل - حلقة 1",
+      "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-1.mp4",
+      "duration": 0
     },
     {
-      "id": "backup_2",
-      "title": "مغامرات ممتعة",
-      "url": "https://example.com/backup/fun_adventures.mp4",
-      "duration": 600
+      "id": "kim_backup_2",
+      "title": "كيم بوسيبل - حلقة 2",
+      "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-2.mp4",
+      "duration": 0
     },
     {
-      "id": "backup_3",
-      "title": "كرتون كلاسيكي",
-      "url": "https://example.com/backup/classic.mp4",
-      "duration": 480
+      "id": "kim_backup_3",
+      "title": "كيم بوسيبل - حلقة 3",
+      "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-3.mp4",
+      "duration": 0
     }
   ],
 
   "emergencyContent": {
     "title": "GTOON FAST - نعود قريباً",
-    "url": "https://example.com/emergency/we_will_be_back.mp4",
-    "duration": 60,
+    "url": "https://e.top4top.io/m_37268trrl0.mp4",
+    "duration": 0,
     "loop": true
   },
 
@@ -75,58 +78,162 @@
     "sunday": [
       {
         "start": "00:00",
-        "title": "توم وجيري",
+        "title": "كيم بوسيبل",
         "type": "program",
         "episodes": [
-          { "title": "حلقة 1", "url": "https://example.com/tom/ep1.mp4", "duration": 420 },
-          { "title": "حلقة 2", "url": "https://example.com/tom/ep2.mp4", "duration": 430 },
-          { "title": "حلقة 3", "url": "https://example.com/tom/ep3.mp4", "duration": 415 }
+          { "title": "الحلقة 1", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-1.mp4", "duration": 0 },
+          { "title": "الحلقة 2", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-2.mp4", "duration": 0 },
+          { "title": "الحلقة 3", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-3.mp4", "duration": 0 },
+          { "title": "الحلقة 4", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-4.mp4", "duration": 0 },
+          { "title": "الحلقة 5", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-5.mp4", "duration": 0 }
         ],
         "adBreakAfter": true
       },
       {
-        "start": "00:25",
-        "title": "بن 10",
+        "start": "02:00",
+        "title": "كيم بوسيبل",
         "type": "program",
         "episodes": [
-          { "title": "حلقة 1", "url": "https://example.com/ben10/ep1.mp4", "duration": 1320 },
-          { "title": "حلقة 2", "url": "https://example.com/ben10/ep2.mp4", "duration": 1300 }
+          { "title": "الحلقة 6", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-6.mp4", "duration": 0 },
+          { "title": "الحلقة 7", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-7.mp4", "duration": 0 },
+          { "title": "الحلقة 8", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-8.mp4", "duration": 0 },
+          { "title": "الحلقة 9", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-9.mp4", "duration": 0 },
+          { "title": "الحلقة 10", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-10.mp4", "duration": 0 }
         ],
         "adBreakAfter": true
       },
       {
-        "start": "01:10",
-        "title": "مغامرات جديدة",
+        "start": "04:00",
+        "title": "كيم بوسيبل",
         "type": "program",
         "episodes": [
-          { "title": "حلقة 1", "url": "https://example.com/adventures/ep1.mp4", "duration": 900 }
+          { "title": "الحلقة 11", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-11.mp4", "duration": 0 },
+          { "title": "الحلقة 12", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-12.mp4", "duration": 0 },
+          { "title": "الحلقة 13", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-13.mp4", "duration": 0 },
+          { "title": "الحلقة 14", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-14.mp4", "duration": 0 },
+          { "title": "الحلقة 15", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-15.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "06:00",
+        "title": "كيم بوسيبل",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 16", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-16.mp4", "duration": 0 },
+          { "title": "الحلقة 17", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-17.mp4", "duration": 0 },
+          { "title": "الحلقة 18", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-18.mp4", "duration": 0 },
+          { "title": "الحلقة 19", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-19.mp4", "duration": 0 },
+          { "title": "الحلقة 20", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-20.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "08:00",
+        "title": "إعادة - كيم بوسيبل",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 1", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-1.mp4", "duration": 0 },
+          { "title": "الحلقة 2", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-2.mp4", "duration": 0 },
+          { "title": "الحلقة 3", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-3.mp4", "duration": 0 },
+          { "title": "الحلقة 4", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-4.mp4", "duration": 0 },
+          { "title": "الحلقة 5", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-5.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "10:00",
+        "title": "إعادة - كيم بوسيبل",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 6", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-6.mp4", "duration": 0 },
+          { "title": "الحلقة 7", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-7.mp4", "duration": 0 },
+          { "title": "الحلقة 8", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-8.mp4", "duration": 0 },
+          { "title": "الحلقة 9", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-9.mp4", "duration": 0 },
+          { "title": "الحلقة 10", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-10.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "12:00",
+        "title": "إعادة - كيم بوسيبل",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 11", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-11.mp4", "duration": 0 },
+          { "title": "الحلقة 12", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-12.mp4", "duration": 0 },
+          { "title": "الحلقة 13", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-13.mp4", "duration": 0 },
+          { "title": "الحلقة 14", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-14.mp4", "duration": 0 },
+          { "title": "الحلقة 15", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-15.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "14:00",
+        "title": "إعادة - كيم بوسيبل",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 16", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-16.mp4", "duration": 0 },
+          { "title": "الحلقة 17", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-17.mp4", "duration": 0 },
+          { "title": "الحلقة 18", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-18.mp4", "duration": 0 },
+          { "title": "الحلقة 19", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-19.mp4", "duration": 0 },
+          { "title": "الحلقة 20", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-20.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "16:00",
+        "title": "كيم بوسيبل - ماراثون",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 1", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-1.mp4", "duration": 0 },
+          { "title": "الحلقة 2", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-2.mp4", "duration": 0 },
+          { "title": "الحلقة 3", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-3.mp4", "duration": 0 },
+          { "title": "الحلقة 4", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-4.mp4", "duration": 0 },
+          { "title": "الحلقة 5", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-5.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "18:00",
+        "title": "كيم بوسيبل - سهرة",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 6", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-6.mp4", "duration": 0 },
+          { "title": "الحلقة 7", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-7.mp4", "duration": 0 },
+          { "title": "الحلقة 8", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-8.mp4", "duration": 0 },
+          { "title": "الحلقة 9", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-9.mp4", "duration": 0 },
+          { "title": "الحلقة 10", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-10.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "20:00",
+        "title": "كيم بوسيبل - ليلي",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 11", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-11.mp4", "duration": 0 },
+          { "title": "الحلقة 12", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-12.mp4", "duration": 0 },
+          { "title": "الحلقة 13", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-13.mp4", "duration": 0 },
+          { "title": "الحلقة 14", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-14.mp4", "duration": 0 },
+          { "title": "الحلقة 15", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-15.mp4", "duration": 0 }
+        ],
+        "adBreakAfter": true
+      },
+      {
+        "start": "22:00",
+        "title": "كيم بوسيبل - ختام اليوم",
+        "type": "program",
+        "episodes": [
+          { "title": "الحلقة 16", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-16.mp4", "duration": 0 },
+          { "title": "الحلقة 17", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-17.mp4", "duration": 0 },
+          { "title": "الحلقة 18", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-18.mp4", "duration": 0 },
+          { "title": "الحلقة 19", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-19.mp4", "duration": 0 },
+          { "title": "الحلقة 20", "url": "https://site.word.tn/videos/kim-possible-part-1/kim-possible-part-1-20.mp4", "duration": 0 }
         ],
         "adBreakAfter": false
-      },
-      {
-        "start": "08:00",
-        "title": "صباح الكرتون",
-        "type": "program",
-        "episodes": [
-          { "title": "حلقة 1", "url": "https://example.com/morning/ep1.mp4", "duration": 1200 },
-          { "title": "حلقة 2", "url": "https://example.com/morning/ep2.mp4", "duration": 1180 }
-        ],
-        "adBreakAfter": true
       }
     ],
-
-    "monday": [
-      {
-        "start": "08:00",
-        "title": "توم وجيري",
-        "type": "program",
-        "episodes": [
-          { "title": "حلقة 4", "url": "https://example.com/tom/ep4.mp4", "duration": 420 }
-        ],
-        "adBreakAfter": true
-      }
-    ],
-
+    "monday": [],
     "tuesday": [],
     "wednesday": [],
     "thursday": [],
