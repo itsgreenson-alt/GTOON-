@@ -3,7 +3,7 @@ const GTOON_CONFIG = {
     TIMEZONE: 'Asia/Riyadh',
     UTC_OFFSET: 3,
 
-    SCHEDULE_URL: 'data/schedule.json',
+    SCHEDULE_URL: 'schedule.json',
 
     PRELOAD_TIMEOUT: 15,
     VIDEO_LOAD_TIMEOUT: 30,
