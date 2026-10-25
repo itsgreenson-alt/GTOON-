@@ -1,27 +1,21 @@
 class BroadcastEngine {
     constructor() {
-        // المكونات الأساسية
         this.timeManager = new TimeManager();
         this.scheduleManager = new ScheduleManager(this.timeManager);
         this.networkMonitor = new NetworkMonitor(this._onNetworkChange.bind(this));
 
-        // حالة المحرك
         this.state = GTOON_CONFIG.STATES.IDLE;
         this.currentItem = null;
         this.currentIndex = -1;
 
-        // عناصر الفيديو (نظام Dual Video للتبديل السلس)
         this.videoA = null;
         this.videoB = null;
         this.activeVideo = 'A';
 
-        // مؤقتات
         this.watchdogTimer = null;
         this.uiUpdateTimer = null;
         this.syncTimer = null;
-        this.transitionTimer = null;
 
-        // عدادات
         this.retryCount = 0;
         this.lastVideoTime = 0;
         this.stalledSince = 0;
@@ -32,86 +26,87 @@ class BroadcastEngine {
         this.onTimeUpdate = null;
         this.onError = null;
         this.onBuffering = null;
+        this.onProbeProgress = null;
     }
 
-    /**
-     * تهيئة المحرك
-     */
     async initialize() {
-        Logger.log('Engine', '🚀 بدء تهيئة محرك البث...');
+        Logger.log('Engine', '🚀 بدء التهيئة...');
         this._setState(GTOON_CONFIG.STATES.LOADING);
 
-        // 1. إنشاء عناصر الفيديو
         this._createVideoElements();
 
-        // 2. مزامنة الوقت
+        // 1. مزامنة الوقت
         await this.timeManager.syncTime();
 
-        // 3. تحميل الجدول
-        const scheduleLoaded = await this.scheduleManager.loadSchedule();
-        if (!scheduleLoaded) {
-            Logger.error('Engine', 'فشل تحميل الجدول');
+        // 2. تحميل الجدول
+        const loaded = await this.scheduleManager.loadSchedule();
+        if (!loaded) {
             this._setState(GTOON_CONFIG.STATES.ERROR);
+            if (this.onError) this.onError('schedule_load_failed');
             return false;
         }
 
-        // 4. تجميع جدول اليوم
+        // 3. فحص مدد الفيديوهات
+        this._setState(GTOON_CONFIG.STATES.PROBING);
+        Logger.log('Engine', '🔍 فحص مدد الفيديوهات...');
+
+        const probeResult = await this.scheduleManager.probeDurations((done, total, url, dur) => {
+            Logger.log('Engine', `فحص ${done}/${total}: ${url.split('/').pop()} = ${dur}ث`);
+            if (this.onProbeProgress) this.onProbeProgress(done, total, url, dur);
+        });
+
+        Logger.log('Engine', `✅ تم فحص المدد: ${probeResult.updated} محدّثة، ${probeResult.issues.length} مشاكل`);
+
+        // 4. تجميع الجدول
         this.scheduleManager.compileDaySchedule();
 
         // 5. بدء البث
         await this._startPlayback();
 
-        // 6. بدء المراقبة
+        // 6. المراقبة
         this._startWatchdog();
         this._startUIUpdates();
         this._startPeriodicSync();
         this._setupVisibilityHandler();
 
-        Logger.log('Engine', '✅ تم تهيئة المحرك بنجاح');
+        Logger.log('Engine', '✅ المحرك يعمل!');
         return true;
     }
 
-    /**
-     * إنشاء عناصر الفيديو المزدوجة
-     */
     _createVideoElements() {
         const container = document.getElementById('video-container');
 
-        // فيديو A (الرئيسي)
         this.videoA = document.createElement('video');
         this.videoA.id = 'video-a';
         this.videoA.className = 'broadcast-video active';
         this.videoA.playsInline = true;
         this.videoA.preload = 'auto';
+        this.videoA.crossOrigin = 'anonymous';
         container.appendChild(this.videoA);
 
-        // فيديو B (للتبديل السلس)
         this.videoB = document.createElement('video');
         this.videoB.id = 'video-b';
         this.videoB.className = 'broadcast-video';
         this.videoB.playsInline = true;
         this.videoB.preload = 'auto';
+        this.videoB.crossOrigin = 'anonymous';
         container.appendChild(this.videoB);
 
-        // ربط الأحداث لكلا الفيديوهين
         this._bindVideoEvents(this.videoA, 'A');
         this._bindVideoEvents(this.videoB, 'B');
     }
 
-    /**
-     * ربط أحداث الفيديو
-     */
     _bindVideoEvents(video, label) {
         video.addEventListener('ended', () => {
             if (this._getActiveLabel() === label) {
-                Logger.log('Engine', `انتهى الفيديو ${label}`);
+                Logger.log('Engine', `انتهى ${label}`);
                 this._onVideoEnded();
             }
         });
 
-        video.addEventListener('error', (e) => {
+        video.addEventListener('error', () => {
             if (this._getActiveLabel() === label) {
-                Logger.error('Engine', `خطأ في الفيديو ${label}`, {
+                Logger.error('Engine', `خطأ في ${label}`, {
                     code: video.error?.code,
                     message: video.error?.message
                 });
@@ -120,41 +115,45 @@ class BroadcastEngine {
         });
 
         video.addEventListener('waiting', () => {
-            if (this._getActiveLabel() === label) {
-                if (this.onBuffering) this.onBuffering(true);
+            if (this._getActiveLabel() === label && this.onBuffering) {
+                this.onBuffering(true);
             }
         });
 
         video.addEventListener('playing', () => {
-            if (this._getActiveLabel() === label) {
-                if (this.onBuffering) this.onBuffering(false);
+            if (this._getActiveLabel() === label && this.onBuffering) {
+                this.onBuffering(false);
             }
         });
 
-        video.addEventListener('canplay', () => {
-            Logger.log('Engine', `الفيديو ${label} جاهز للتشغيل`);
-        });
-
         video.addEventListener('loadedmetadata', () => {
-            Logger.log('Engine', `بيانات الفيديو ${label} محمّلة. المدة: ${video.duration}ث`);
+            Logger.log('Engine', `بيانات ${label}: ${video.duration.toFixed(1)}ث`);
 
-            // التحقق من تطابق المدة مع الجدول
+            // تصحيح المدة تلقائياً
             if (this.currentItem && this._getActiveLabel() === label) {
-                const expectedDuration = this.currentItem.duration;
-                const actualDuration = video.duration;
-                const diff = Math.abs(expectedDuration - actualDuration);
+                const expected = this.currentItem.duration;
+                const actual = Math.floor(video.duration);
+                const diff = Math.abs(expected - actual);
 
-                if (diff > 5) {
-                    Logger.warn('Engine',
-                        `فرق في المدة! المتوقع: ${expectedDuration}ث، الفعلي: ${actualDuration.toFixed(1)}ث، الفرق: ${diff.toFixed(1)}ث`);
+                if (diff > 2 && expected > 0) {
+                    Logger.warn('Engine', `تصحيح المدة: ${expected}→${actual}ث (فرق ${diff}ث)`);
 
-                    // تحديث المدة في الجدول
                     if (this.currentItem.index >= 0 && this.scheduleManager.compiledSchedule) {
-                        const item = this.scheduleManager.compiledSchedule[this.currentItem.index];
-                        if (item) {
-                            item.duration = Math.floor(actualDuration);
-                            item.endTime = item.startTime + item.duration;
-                            Logger.log('Engine', 'تم تحديث المدة في الجدول تلقائياً');
+                        const schedItem = this.scheduleManager.compiledSchedule[this.currentItem.index];
+                        if (schedItem) {
+                            schedItem.duration = actual;
+                            schedItem.endTime = schedItem.startTime + actual;
+
+                            // إعادة حساب العناصر بعده
+                            let t = schedItem.endTime;
+                            for (let i = this.currentItem.index + 1; i < this.scheduleManager.compiledSchedule.length; i++) {
+                                this.scheduleManager.compiledSchedule[i].startTime = t;
+                                this.scheduleManager.compiledSchedule[i].endTime = t + this.scheduleManager.compiledSchedule[i].duration;
+                                t = this.scheduleManager.compiledSchedule[i].endTime;
+                            }
+
+                            this.currentItem.duration = actual;
+                            this.currentItem.endTime = this.currentItem.startTime + actual;
                         }
                     }
                 }
@@ -162,75 +161,64 @@ class BroadcastEngine {
         });
     }
 
-    /**
-     * بدء التشغيل
-     */
     async _startPlayback() {
         const item = this.scheduleManager.getCurrentItem();
 
         if (!item) {
-            Logger.error('Engine', 'لا يوجد محتوى للتشغيل');
+            Logger.error('Engine', 'لا يوجد محتوى');
             this._playEmergencyContent();
             return;
         }
 
-        Logger.log('Engine', `▶️ تشغيل: ${item.title}`, {
-            seekTo: `${item.seekPosition}ث`,
-            remaining: TimeManager.formatDuration(item.remaining)
-        });
+        Logger.log('Engine', `▶️ ${item.title} (seek: ${item.seekPosition}ث, remaining: ${item.remaining}ث)`);
 
         this.currentItem = item;
         this.currentIndex = item.index;
         this.retryCount = 0;
 
         const video = this._getActiveVideo();
-        await this._loadAndPlay(video, item.url, item.seekPosition, item.loop);
-
-        this._setState(this._stateForItemType(item.type));
-
-        if (this.onItemChange) this.onItemChange(item);
-
-        // بدء التحميل المسبق للعنصر التالي
-        this._preloadNext();
+        try {
+            await this._loadAndPlay(video, item.url, item.seekPosition, item.loop);
+            this._setState(this._stateForType(item.type));
+            if (this.onItemChange) this.onItemChange(item);
+            this._preloadNext();
+        } catch (error) {
+            Logger.error('Engine', `فشل التشغيل: ${error.message}`);
+            this._onVideoError();
+        }
     }
 
-    /**
-     * تحميل وتشغيل فيديو
-     */
-    async _loadAndPlay(video, url, seekTo = 0, loop = false) {
+    _loadAndPlay(video, url, seekTo = 0, loop = false) {
         return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                Logger.warn('Engine', 'مهلة تحميل الفيديو انتهت');
+                cleanup();
                 reject(new Error('Timeout'));
             }, GTOON_CONFIG.VIDEO_LOAD_TIMEOUT * 1000);
 
-            const onCanPlay = () => {
+            const cleanup = () => {
                 clearTimeout(timeout);
                 video.removeEventListener('canplay', onCanPlay);
                 video.removeEventListener('error', onError);
+            };
 
-                if (seekTo > 0) {
+            const onCanPlay = () => {
+                cleanup();
+                if (seekTo > 0 && isFinite(seekTo)) {
                     video.currentTime = seekTo;
                 }
                 video.loop = loop || false;
 
-                video.play()
-                    .then(() => {
-                        Logger.log('Engine', 'بدأ التشغيل');
-                        resolve();
-                    })
-                    .catch(err => {
-                        Logger.warn('Engine', 'فشل التشغيل التلقائي (يحتاج تفاعل المستخدم)', err.message);
-                        // عرض زر التشغيل
-                        if (this.onError) this.onError('autoplay_blocked');
-                        resolve(); // لا نريد إعادة المحاولة
-                    });
+                video.play().then(() => {
+                    resolve();
+                }).catch(err => {
+                    Logger.warn('Engine', 'Autoplay محجوب', err.message);
+                    if (this.onError) this.onError('autoplay_blocked');
+                    resolve();
+                });
             };
 
             const onError = () => {
-                clearTimeout(timeout);
-                video.removeEventListener('canplay', onCanPlay);
-                video.removeEventListener('error', onError);
+                cleanup();
                 reject(new Error('Video load error'));
             };
 
@@ -242,59 +230,48 @@ class BroadcastEngine {
         });
     }
 
-    /**
-     * التحميل المسبق للعنصر التالي
-     */
     _preloadNext() {
         const nextItem = this.scheduleManager.getNextItem(this.currentIndex);
         if (!nextItem || !nextItem.url) return;
 
-        const inactiveVideo = this._getInactiveVideo();
-
+        const inactive = this._getInactiveVideo();
         Logger.log('Engine', `⏳ تحميل مسبق: ${nextItem.title}`);
 
         const preloadTimeout = setTimeout(() => {
-            Logger.warn('Engine', 'مهلة التحميل المسبق انتهت');
-            inactiveVideo.src = '';
+            inactive.src = '';
+            Logger.warn('Engine', 'مهلة التحميل المسبق');
         }, GTOON_CONFIG.PRELOAD_TIMEOUT * 1000);
 
-        inactiveVideo.src = nextItem.url;
-        inactiveVideo.preload = 'auto';
-        inactiveVideo.load();
+        inactive.src = nextItem.url;
+        inactive.preload = 'auto';
+        inactive.load();
 
-        inactiveVideo.addEventListener('canplay', () => {
+        inactive.addEventListener('canplay', () => {
             clearTimeout(preloadTimeout);
-            Logger.log('Engine', '✅ التحميل المسبق مكتمل');
+            Logger.log('Engine', '✅ تحميل مسبق مكتمل');
         }, { once: true });
 
-        inactiveVideo.addEventListener('error', () => {
+        inactive.addEventListener('error', () => {
             clearTimeout(preloadTimeout);
             Logger.warn('Engine', '⚠️ فشل التحميل المسبق');
         }, { once: true });
     }
 
-    /**
-     * عند انتهاء الفيديو الحالي
-     */
     async _onVideoEnded() {
-        Logger.log('Engine', '⏭️ انتهى المحتوى الحالي، الانتقال للتالي...');
+        Logger.log('Engine', '⏭️ انتقال...');
 
-        // تحقق: هل يجب الانتقال حسب الجدول أم حسب نهاية الفيديو؟
-        const nextScheduleItem = this.scheduleManager.getCurrentItem();
+        // تحقق: هل يوجد عنصر تالي؟
+        const nextItem = this.scheduleManager.getNextItem(this.currentIndex);
 
-        if (nextScheduleItem && nextScheduleItem.index !== this.currentIndex) {
-            // الجدول يقول ننتقل لعنصر مختلف
-            this.currentItem = nextScheduleItem;
-            this.currentIndex = nextScheduleItem.index;
-        } else {
-            // الانتقال للعنصر التالي في القائمة
-            const nextItem = this.scheduleManager.getNextItem(this.currentIndex);
-            if (nextItem && nextItem.url) {
-                this.currentItem = nextItem;
-                this.currentIndex = nextItem.index;
+        if (!nextItem || !nextItem.url) {
+            // تحقق من الجدول حسب الوقت
+            const currentByTime = this.scheduleManager.getCurrentItem();
+            if (currentByTime && currentByTime.index !== this.currentIndex) {
+                this.currentItem = currentByTime;
+                this.currentIndex = currentByTime.index;
             } else {
-                // نهاية الجدول - إعادة التجميع
-                Logger.log('Engine', 'نهاية الجدول، إعادة تجميع...');
+                // نهاية الجدول
+                Logger.log('Engine', 'نهاية الجدول');
                 this.scheduleManager.compileDaySchedule();
                 const fresh = this.scheduleManager.getCurrentItem();
                 if (fresh) {
@@ -305,31 +282,35 @@ class BroadcastEngine {
                     return;
                 }
             }
+        } else {
+            this.currentItem = nextItem;
+            this.currentIndex = nextItem.index;
         }
 
         this.retryCount = 0;
 
-        // التبديل بين الفيديوهين (Dual Video Swap)
+        // محاولة التبديل السلس
         const nextVideo = this._getInactiveVideo();
         const currentVideo = this._getActiveVideo();
 
         try {
-            if (nextVideo.src && nextVideo.readyState >= 2) {
-                // الفيديو التالي جاهز - تبديل سلس
+            if (nextVideo.src && nextVideo.readyState >= 2 &&
+                nextVideo.src.includes(new URL(this.currentItem.url).pathname)) {
+                // الفيديو جاهز - تبديل سلس
                 if (this.currentItem.seekPosition > 0) {
                     nextVideo.currentTime = this.currentItem.seekPosition;
+                } else {
+                    nextVideo.currentTime = 0;
                 }
                 nextVideo.loop = this.currentItem.loop || false;
                 await nextVideo.play();
 
-                // تبديل العرض
                 this._swapVideos();
-
-                // إيقاف القديم
                 currentVideo.pause();
-                currentVideo.src = '';
+                currentVideo.removeAttribute('src');
+                currentVideo.load();
             } else {
-                // الفيديو التالي غير جاهز - تحميل مباشر
+                // تحميل مباشر في نفس العنصر
                 await this._loadAndPlay(
                     currentVideo,
                     this.currentItem.url,
@@ -338,73 +319,52 @@ class BroadcastEngine {
                 );
             }
 
-            this._setState(this._stateForItemType(this.currentItem.type));
+            this._setState(this._stateForType(this.currentItem.type));
             if (this.onItemChange) this.onItemChange(this.currentItem);
-
-            // تحميل مسبق للعنصر بعد التالي
             this._preloadNext();
 
         } catch (error) {
-            Logger.error('Engine', 'فشل الانتقال للعنصر التالي', error.message);
+            Logger.error('Engine', 'فشل الانتقال', error.message);
             this._onVideoError();
         }
     }
 
-    /**
-     * عند حدوث خطأ في الفيديو
-     */
     async _onVideoError() {
         this.retryCount++;
 
         if (this.retryCount <= GTOON_CONFIG.MAX_RETRY_ATTEMPTS) {
-            Logger.warn('Engine', `إعادة المحاولة ${this.retryCount}/${GTOON_CONFIG.MAX_RETRY_ATTEMPTS}...`);
+            Logger.warn('Engine', `إعادة ${this.retryCount}/${GTOON_CONFIG.MAX_RETRY_ATTEMPTS}...`);
             this._setState(GTOON_CONFIG.STATES.RECOVERING);
 
             await this._delay(GTOON_CONFIG.RETRY_DELAY * 1000);
 
-            const video = this._getActiveVideo();
             try {
-                await this._loadAndPlay(
-                    video,
-                    this.currentItem.url,
-                    this.currentItem.seekPosition || 0,
-                    this.currentItem.loop
-                );
-                this._setState(this._stateForItemType(this.currentItem.type));
-            } catch (error) {
+                const video = this._getActiveVideo();
+                await this._loadAndPlay(video, this.currentItem.url, this.currentItem.seekPosition || 0, this.currentItem.loop);
+                this._setState(this._stateForType(this.currentItem.type));
+            } catch (e) {
                 this._onVideoError();
             }
         } else {
-            Logger.error('Engine', 'استنفدت جميع محاولات إعادة التحميل. تخطي العنصر.');
+            Logger.error('Engine', 'تخطي العنصر المعطل');
             this.retryCount = 0;
-
-            // تخطي للعنصر التالي
             this._onVideoEnded();
         }
     }
 
-    /**
-     * تشغيل المحتوى الطارئ
-     */
     _playEmergencyContent() {
-        Logger.warn('Engine', '🆘 تشغيل المحتوى الطارئ');
+        Logger.warn('Engine', '🆘 محتوى طوارئ');
         this._setState(GTOON_CONFIG.STATES.PLAYING_EMERGENCY);
 
-        const emergency = this.scheduleManager.emergencyContent;
-        if (emergency) {
+        const em = this.scheduleManager.emergencyContent;
+        if (em) {
             this.currentItem = {
-                type: 'emergency',
-                title: emergency.title,
-                url: emergency.url,
-                duration: emergency.duration,
-                loop: true,
-                index: -1,
-                seekPosition: 0
+                type: 'emergency', title: em.title, url: em.url,
+                duration: em.duration, loop: true, index: -1, seekPosition: 0
             };
 
             const video = this._getActiveVideo();
-            this._loadAndPlay(video, emergency.url, 0, true).catch(() => {
-                Logger.error('Engine', 'فشل حتى المحتوى الطارئ!');
+            this._loadAndPlay(video, em.url, 0, true).catch(() => {
                 if (this.onError) this.onError('total_failure');
             });
 
@@ -414,21 +374,16 @@ class BroadcastEngine {
         }
     }
 
-    /**
-     * Watchdog - مراقبة صحة البث
-     */
     _startWatchdog() {
         this.watchdogTimer = setInterval(() => {
             const video = this._getActiveVideo();
-
             if (!video || video.paused || video.ended) return;
 
-            // التحقق من تقدم الفيديو
-            if (video.currentTime === this.lastVideoTime) {
+            if (Math.abs(video.currentTime - this.lastVideoTime) < 0.1) {
                 if (this.stalledSince === 0) {
                     this.stalledSince = Date.now();
                 } else if (Date.now() - this.stalledSince > GTOON_CONFIG.WATCHDOG_INTERVAL * 1000) {
-                    Logger.warn('Engine', '🐛 Watchdog: الفيديو متوقف عن التقدم!');
+                    Logger.warn('Engine', '🐛 Watchdog: متوقف!');
                     this.stalledSince = 0;
                     this._onVideoError();
                 }
@@ -437,246 +392,168 @@ class BroadcastEngine {
                 this.lastVideoTime = video.currentTime;
             }
 
-            // التحقق من تزامن الوقت مع الجدول
             this._checkScheduleSync();
-
         }, GTOON_CONFIG.WATCHDOG_INTERVAL * 1000);
     }
 
-    /**
-     * التحقق من التزامن مع الجدول
-     */
     _checkScheduleSync() {
-        const expectedItem = this.scheduleManager.getCurrentItem();
-        if (!expectedItem) return;
+        const expected = this.scheduleManager.getCurrentItem();
+        if (!expected || expected.index < 0) return;
 
-        // إذا تغير العنصر المتوقع (مثلاً المستخدم ترك التبويب وعاد)
-        if (expectedItem.index !== this.currentIndex && expectedItem.index >= 0) {
-            Logger.warn('Engine', 'عدم تزامن مع الجدول! إعادة المزامنة...');
-            this._resync();
+        if (expected.index !== this.currentIndex) {
+            const drift = Math.abs(expected.seekPosition - (this._getActiveVideo()?.currentTime || 0));
+            if (drift > 30) {
+                Logger.warn('Engine', `عدم تزامن (drift: ${drift.toFixed(0)}ث). إعادة مزامنة...`);
+                this._resync();
+            }
         }
     }
 
-    /**
-     * إعادة المزامنة مع الجدول
-     */
     async _resync() {
-        Logger.log('Engine', '🔄 إعادة مزامنة البث...');
-
-        // إيقاف الفيديو الحالي
+        Logger.log('Engine', '🔄 إعادة مزامنة...');
         const video = this._getActiveVideo();
-        video.pause();
-
-        // بدء التشغيل من الموضع الصحيح
+        if (video) {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+        }
         await this._startPlayback();
     }
 
-    /**
-     * معالجة إخفاء/إظهار الصفحة
-     */
     _setupVisibilityHandler() {
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                Logger.log('Engine', 'الصفحة مخفية');
-            } else {
-                Logger.log('Engine', 'الصفحة ظاهرة - التحقق من التزامن');
-                this._checkScheduleSync();
+            if (!document.hidden) {
+                Logger.log('Engine', 'الصفحة ظاهرة - تحقق من التزامن');
+                setTimeout(() => this._checkScheduleSync(), 1000);
             }
         });
     }
 
-    /**
-     * تحديثات الواجهة الدورية
-     */
     _startUIUpdates() {
         this.uiUpdateTimer = setInterval(() => {
-            if (this.onTimeUpdate) {
-                const video = this._getActiveVideo();
-                const now = this.timeManager.getSecondsSinceMidnight();
+            if (!this.onTimeUpdate) return;
 
-                this.onTimeUpdate({
-                    currentTime: this.timeManager.getMeccaTimeString(),
-                    videoPosition: video ? video.currentTime : 0,
-                    videoDuration: video ? video.duration : 0,
-                    itemTitle: this.currentItem ? this.currentItem.title : '',
-                    itemRemaining: this.currentItem ?
-                        Math.max(0, this.currentItem.endTime - now) : 0,
-                    state: this.state,
-                    buffered: video ? this._getBufferedPercentage(video) : 0
-                });
-            }
+            const video = this._getActiveVideo();
+            const now = this.timeManager.getSecondsSinceMidnight();
+
+            this.onTimeUpdate({
+                currentTime: this.timeManager.getMeccaTimeString(),
+                videoPosition: video?.currentTime || 0,
+                videoDuration: video?.duration || 0,
+                itemTitle: this.currentItem?.title || '',
+                itemRemaining: this.currentItem ? Math.max(0, this.currentItem.endTime - now) : 0,
+                state: this.state,
+                buffered: this._getBuffered(video)
+            });
         }, GTOON_CONFIG.UI_UPDATE_INTERVAL);
     }
 
-    /**
-     * مزامنة دورية للوقت
-     */
     _startPeriodicSync() {
         this.syncTimer = setInterval(async () => {
-            if (this.timeManager.needsResync()) {
-                await this.timeManager.syncTime();
-            }
-        }, 60000); // كل دقيقة تحقق
+            if (this.timeManager.needsResync()) await this.timeManager.syncTime();
+        }, 60000);
     }
 
-    /**
-     * تغيير حالة المحرك
-     */
-    _setState(newState) {
-        if (this.state !== newState) {
-            const oldState = this.state;
-            this.state = newState;
-            Logger.log('Engine', `حالة: ${oldState} → ${newState}`);
-            if (this.onStateChange) this.onStateChange(newState, oldState);
+    // ============================================
+    // أدوات
+    // ============================================
+
+    _setState(s) {
+        if (this.state !== s) {
+            const old = this.state;
+            this.state = s;
+            Logger.log('Engine', `${old} → ${s}`);
+            if (this.onStateChange) this.onStateChange(s, old);
         }
     }
 
-    /**
-     * تحديد الحالة حسب نوع العنصر
-     */
-    _stateForItemType(type) {
+    _stateForType(type) {
         const map = {
-            'episode': GTOON_CONFIG.STATES.PLAYING_EPISODE,
-            'bumper': GTOON_CONFIG.STATES.PLAYING_BUMPER,
-            'ad': GTOON_CONFIG.STATES.PLAYING_ADS,
-            'backup': GTOON_CONFIG.STATES.PLAYING_BACKUP,
-            'emergency': GTOON_CONFIG.STATES.PLAYING_EMERGENCY
+            episode: GTOON_CONFIG.STATES.PLAYING_EPISODE,
+            bumper: GTOON_CONFIG.STATES.PLAYING_BUMPER,
+            ad: GTOON_CONFIG.STATES.PLAYING_ADS,
+            backup: GTOON_CONFIG.STATES.PLAYING_BACKUP,
+            emergency: GTOON_CONFIG.STATES.PLAYING_EMERGENCY
         };
         return map[type] || GTOON_CONFIG.STATES.PLAYING_EPISODE;
     }
 
-    // ============================================
-    // أدوات الفيديو المزدوج
-    // ============================================
-
-    _getActiveVideo() {
-        return this.activeVideo === 'A' ? this.videoA : this.videoB;
-    }
-
-    _getInactiveVideo() {
-        return this.activeVideo === 'A' ? this.videoB : this.videoA;
-    }
-
-    _getActiveLabel() {
-        return this.activeVideo;
-    }
+    _getActiveVideo() { return this.activeVideo === 'A' ? this.videoA : this.videoB; }
+    _getInactiveVideo() { return this.activeVideo === 'A' ? this.videoB : this.videoA; }
+    _getActiveLabel() { return this.activeVideo; }
 
     _swapVideos() {
-        const oldActive = this._getActiveVideo();
-        const newActive = this._getInactiveVideo();
-
-        oldActive.classList.remove('active');
-        newActive.classList.add('active');
-
+        this._getActiveVideo().classList.remove('active');
+        this._getInactiveVideo().classList.add('active');
         this.activeVideo = this.activeVideo === 'A' ? 'B' : 'A';
-        Logger.log('Engine', `تبديل الفيديو → ${this.activeVideo}`);
+        Logger.log('Engine', `تبديل → ${this.activeVideo}`);
     }
 
-    _getBufferedPercentage(video) {
-        if (video.buffered.length > 0 && video.duration > 0) {
+    _getBuffered(video) {
+        if (video?.buffered?.length > 0 && video.duration > 0) {
             return (video.buffered.end(video.buffered.length - 1) / video.duration) * 100;
         }
         return 0;
     }
 
-    _delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
+    _delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-    // ============================================
-    // واجهة التحكم العامة
-    // ============================================
-
-    /**
-     * كتم/إلغاء كتم الصوت
-     */
     toggleMute() {
-        const video = this._getActiveVideo();
-        video.muted = !video.muted;
-        return video.muted;
+        const v = this._getActiveVideo();
+        v.muted = !v.muted;
+        return v.muted;
     }
 
-    /**
-     * تعيين مستوى الصوت (0-1)
-     */
     setVolume(level) {
-        const video = this._getActiveVideo();
-        video.volume = Math.max(0, Math.min(1, level));
-        video.muted = false;
-        return video.volume;
+        const v = this._getActiveVideo();
+        v.volume = Math.max(0, Math.min(1, level));
+        v.muted = false;
+        return v.volume;
     }
 
-    /**
-     * الحصول على مستوى الصوت
-     */
-    getVolume() {
-        return this._getActiveVideo()?.volume || 1;
-    }
+    getVolume() { return this._getActiveVideo()?.volume || 1; }
 
-    /**
-     * ملء الشاشة
-     */
     toggleFullscreen() {
-        const container = document.getElementById('player-wrapper');
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-        } else {
-            container.requestFullscreen();
-        }
+        const el = document.getElementById('player-wrapper');
+        if (document.fullscreenElement) document.exitFullscreen();
+        else el.requestFullscreen();
     }
 
-    /**
-     * Picture in Picture
-     */
     async togglePiP() {
-        const video = this._getActiveVideo();
-        if (document.pictureInPictureElement) {
-            await document.exitPictureInPicture();
-        } else if (video.requestPictureInPicture) {
-            await video.requestPictureInPicture();
-        }
+        const v = this._getActiveVideo();
+        if (document.pictureInPictureElement) await document.exitPictureInPicture();
+        else if (v.requestPictureInPicture) await v.requestPictureInPicture();
     }
 
-    /**
-     * الحصول على حالة المحرك
-     */
     getStatus() {
         return {
-            state: this.state,
-            currentItem: this.currentItem,
+            state: this.state, currentItem: this.currentItem,
             currentTime: this.timeManager.getMeccaTimeString(),
-            dayName: this.timeManager.getDayName(),
+            day: this.timeManager.getDayName(),
             clockOffset: this.timeManager.clockOffset,
             online: this.networkMonitor.isOnline(),
-            retryCount: this.retryCount
+            retryCount: this.retryCount,
+            scheduleItems: this.scheduleManager.compiledSchedule?.length || 0
         };
     }
 
-    /**
-     * معالجة تغير حالة الشبكة
-     */
     _onNetworkChange(isOnline) {
         if (isOnline) {
-            Logger.log('Engine', '🌐 الإنترنت عاد - إعادة المزامنة');
+            Logger.log('Engine', '🌐 الإنترنت عاد');
+            const overlay = document.getElementById('offline-overlay');
+            if (overlay) overlay.style.display = 'none';
             this._resync();
         } else {
-            Logger.warn('Engine', '📡 انقطع الإنترنت');
             if (this.onError) this.onError('offline');
         }
     }
 
-    /**
-     * إيقاف المحرك
-     */
     destroy() {
         clearInterval(this.watchdogTimer);
         clearInterval(this.uiUpdateTimer);
         clearInterval(this.syncTimer);
-        clearTimeout(this.transitionTimer);
-
         if (this.videoA) { this.videoA.pause(); this.videoA.src = ''; }
         if (this.videoB) { this.videoB.pause(); this.videoB.src = ''; }
-
-        Logger.log('Engine', '🛑 تم إيقاف المحرك');
+        Logger.log('Engine', '🛑 تم الإيقاف');
     }
 }
