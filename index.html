@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GTOON FAST</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="description" content="قناة GTOON FAST - بث مباشر 24/7">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--primary:#e50914;--primary-dark:#b0060f;--bg-dark:#0a0a0a;--bg-card:#1a1a2e;--bg-overlay:rgba(0,0,0,0.85);--text-primary:#fff;--text-secondary:#a0a0a0;--accent:#00d4ff;--success:#00c853;--warning:#ffa726;--error:#ff1744}
+        body{background:var(--bg-dark);color:var(--text-primary);font-family:'Segoe UI','Arial',sans-serif;overflow:hidden;height:100vh;width:100vw;direction:rtl}
+
+        #player-wrapper{position:relative;width:100vw;height:100vh;background:#000;cursor:none;overflow:hidden}
+        #player-wrapper:hover{cursor:default}
+        #video-container{width:100%;height:100%;position:relative}
+        .broadcast-video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;background:#000;opacity:0;transition:opacity .5s;z-index:1}
+        .broadcast-video.active{opacity:1;z-index:2}
+
+        #channel-logo{position:absolute;top:20px;right:20px;z-index:10;opacity:.7}
+        #channel-logo img{height:45px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))}
+        #channel-logo span{font-size:22px;font-weight:bold;color:var(--primary);text-shadow:0 2px 10px rgba(0,0,0,.8)}
+
+        #live-indicator{position:absolute;top:20px;left:20px;z-index:10;background:rgba(0,0,0,.6);padding:6px 14px;border-radius:4px;font-size:13px;font-weight:bold;letter-spacing:1px;backdrop-filter:blur(10px)}
+        #live-indicator.live{background:var(--primary);animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+
+        #player-info{position:absolute;top:0;left:0;right:0;z-index:10;padding:60px 20px 40px;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);opacity:0;transform:translateY(-10px);transition:all .4s;pointer-events:none}
+        #player-info.visible{opacity:1;transform:translateY(0)}
+        .info-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+        #content-type{display:inline-block;padding:3px 10px;border-radius:3px;font-size:11px;font-weight:bold}
+        .type-episode{background:var(--primary)}.type-bumper{background:#6c3483}.type-ad{background:var(--warning);color:#000}.type-backup{background:#2980b9}.type-emergency{background:var(--error)}
+        #current-title{font-size:22px;font-weight:bold;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+        .next-info{font-size:13px;color:var(--text-secondary)}.next-info span{color:var(--accent)}
+
+        #player-controls{position:absolute;bottom:0;left:0;right:0;z-index:10;padding:40px 20px 20px;background:linear-gradient(to top,rgba(0,0,0,.9),transparent);opacity:0;transform:translateY(10px);transition:all .4s}
+        #player-controls.visible{opacity:1;transform:translateY(0)}
+        .progress-container{position:relative;height:5px;background:rgba(255,255,255,.15);border-radius:3px;margin-bottom:12px;overflow:hidden}
+        #buffer-bar{position:absolute;top:0;right:0;height:100%;background:rgba(255,255,255,.25);border-radius:3px;transition:width .5s}
+        #progress-bar{position:absolute;top:0;right:0;height:100%;background:var(--primary);border-radius:3px;transition:width .3s linear}
+        .controls-row{display:flex;align-items:center;justify-content:space-between}
+        .controls-left,.controls-right{display:flex;align-items:center;gap:8px}
+        .controls-center{display:flex;align-items:center;gap:15px;flex:1;justify-content:center}
+        .ctrl-btn{background:none;border:none;color:#fff;cursor:pointer;padding:8px;border-radius:50%;font-size:18px;transition:all .2s;display:flex;align-items:center;justify-content:center;width:40px;height:40px}
+        .ctrl-btn:hover{background:rgba(255,255,255,.15);transform:scale(1.1)}
+        .volume-control{display:flex;align-items:center;gap:6px}
+        #volume-slider{width:80px;height:4px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,.3);border-radius:2px;outline:none;direction:ltr}
+        #volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;cursor:pointer}
+        .time-display{font-size:13px;color:var(--text-secondary);font-family:'Courier New',monospace}
+        #current-time{color:var(--accent);font-weight:bold}
+
+        #buffering-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:15;display:none;flex-direction:column;align-items:center;gap:15px}
+        .spinner{width:50px;height:50px;border:4px solid rgba(255,255,255,.2);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spinner-text{font-size:14px;color:var(--text-secondary)}
+
+        .overlay-screen{position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-overlay);backdrop-filter:blur(20px);gap:20px}
+        .overlay-icon{font-size:60px}.overlay-title{font-size:24px;font-weight:bold}
+        .overlay-subtitle{font-size:14px;color:var(--text-secondary);text-align:center;max-width:400px}
+        .overlay-btn{padding:12px 30px;background:var(--primary);color:#fff;border:none;border-radius:6px;font-size:16px;cursor:pointer;transition:background .3s}
+        .overlay-btn:hover{background:var(--primary-dark)}
+
+        #epg-panel{position:absolute;top:0;left:0;bottom:0;width:320px;z-index:25;background:var(--bg-overlay);backdrop-filter:blur(20px);transform:translateX(-100%);transition:transform .4s;overflow-y:auto;border-left:1px solid rgba(255,255,255,.1)}
+        #epg-panel.visible{transform:translateX(0)}
+        .epg-header{padding:20px;border-bottom:1px solid rgba(255,255,255,.1);font-size:18px;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
+        .epg-close{background:none;border:none;color:#fff;font-size:24px;cursor:pointer}
+        #epg-list{list-style:none;padding:0}
+        .epg-item{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:grid;grid-template-columns:50px 1fr auto;gap:10px;align-items:center;transition:background .2s}
+        .epg-item:hover{background:rgba(255,255,255,.05)}
+        .epg-item.epg-now{background:rgba(229,9,20,.2);border-right:3px solid var(--primary)}
+        .epg-time{font-size:13px;color:var(--accent);font-family:monospace}
+        .epg-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .epg-duration{font-size:11px;color:var(--text-secondary)}
+        .epg-live{background:var(--primary);padding:2px 8px;border-radius:3px;font-size:10px;font-weight:bold}
+
+        #notification{position:absolute;bottom:90px;right:20px;z-index:12;background:var(--bg-card);padding:10px 20px;border-radius:6px;font-size:14px;border-right:3px solid var(--accent);transform:translateX(120%);transition:transform .4s;max-width:300px}
+        #notification.show{transform:translateX(0)}
+
+        #engine-state{position:absolute;bottom:80px;left:20px;z-index:12;font-size:11px;color:var(--text-secondary);background:rgba(0,0,0,.5);padding:4px 10px;border-radius:3px}
+
+        #probe-progress{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:30;background:var(--bg-card);padding:20px 30px;border-radius:10px;font-size:16px;text-align:center;display:none;border:1px solid rgba(255,255,255,.1)}
+
+        @media(max-width:768px){#current-title{font-size:16px}#channel-logo img,#channel-logo span{height:30px;font-size:16px}#epg-panel{width:260px}.ctrl-btn{width:35px;height:35px;font-size:15px}#volume-slider{width:60px}}
+        @media(max-width:480px){#volume-slider{display:none}#epg-panel{width:100%}}
+    </style>
+</head>
+<body>
+    <div id="player-wrapper">
+        <div id="video-container"></div>
+
+        <div id="channel-logo">
+            <span>GTOON</span>
+        </div>
+
+        <div id="live-indicator">⏳ جاري التحميل...</div>
+        <div id="engine-state"></div>
+
+        <div id="buffering-spinner">
+            <div class="spinner"></div>
+            <div class="spinner-text">جاري التحميل...</div>
+        </div>
+
+        <div id="probe-progress"></div>
+
+        <div id="player-info" class="visible">
+            <div class="info-row">
+                <span id="content-type" class="content-type type-episode">📺 برنامج</span>
+                <span id="time-remaining" class="time-display"></span>
+            </div>
+            <div class="info-row">
+                <span id="current-title">GTOON FAST</span>
+            </div>
+            <div class="info-row next-info">
+                التالي: <span id="next-title">-</span>
+                <span id="next-time"></span>
+            </div>
+        </div>
+
+        <div id="player-controls" class="visible">
+            <div class="progress-container">
+                <div id="buffer-bar"></div>
+                <div id="progress-bar"></div>
+            </div>
+            <div class="controls-row">
+                <div class="controls-right">
+                    <div class="volume-control">
+                        <button id="btn-mute" class="ctrl-btn" title="M">🔊</button>
+                        <input type="range" id="volume-slider" min="0" max="100" value="100">
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <span id="current-time" class="time-display">--:--:--</span>
+                </div>
+                <div class="controls-left">
+                    <button id="btn-epg" class="ctrl-btn" title="I">📋</button>
+                    <button id="btn-pip" class="ctrl-btn" title="P">🖼️</button>
+                    <button id="btn-fullscreen" class="ctrl-btn" title="F">⛶</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="autoplay-overlay" class="overlay-screen">
+            <div class="overlay-icon">📺</div>
+            <div class="overlay-title">GTOON FAST</div>
+            <div class="overlay-subtitle">اضغط لبدء مشاهدة البث المباشر</div>
+            <button class="overlay-btn" id="btn-start">▶ شاهد الآن</button>
+        </div>
+
+        <div id="offline-overlay" class="overlay-screen">
+            <div class="overlay-icon">📡</div>
+            <div class="overlay-title">انقطع الاتصال</div>
+            <div class="overlay-subtitle">سيتم استعادة البث تلقائياً عند عودة الإنترنت</div>
+        </div>
+
+        <div id="error-overlay" class="overlay-screen">
+            <div class="overlay-icon">⚠️</div>
+            <div class="overlay-title">حدث خطأ</div>
+            <div class="overlay-subtitle">نعتذر عن هذا العطل</div>
+            <button class="overlay-btn" onclick="location.reload()">🔄 إعادة تحميل</button>
+        </div>
+
+        <div id="notification"></div>
+
+        <div id="epg-panel">
+            <div class="epg-header">
+                <span>📋 جدول البرامج</span>
+                <button class="epg-close" onclick="document.getElementById('epg-panel').classList.remove('visible')">✕</button>
+            </div>
+            <ul id="epg-list"></ul>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/schedule.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/ui.js"></script>
+
+    <script>
+        let gtoonEngine, gtoonUI;
+
+        async function startGTOON() {
+            console.log('%c GTOON FAST ', 'background:#e50914;color:#fff;font-size:20px;padding:10px;border-radius:5px');
+
+            try {
+                gtoonEngine = new BroadcastEngine();
+                window.gtoonEngine = gtoonEngine;
+
+                gtoonUI = new PlayerUI(gtoonEngine);
+
+                // زر بدء التشغيل
+                document.getElementById('btn-start')?.addEventListener('click', () => {
+                    document.getElementById('autoplay-overlay').style.display = 'none';
+                    const v = gtoonEngine._getActiveVideo();
+                    if (v) { v.muted = false; v.play(); }
+                });
+
+                const success = await gtoonEngine.initialize();
+
+                if (success) {
+                    console.log('%c ✅ البث يعمل! ', 'background:#00c853;color:#fff;font-size:14px;padding:5px');
+                }
+            } catch (error) {
+                console.error('خطأ:', error);
+                document.getElementById('error-overlay').style.display = 'flex';
+            }
+        }
+
+        document.readyState === 'loading'
+            ? document.addEventListener('DOMContentLoaded', startGTOON)
+            : startGTOON();
+
+        // أوامر التشخيص
+        window.gd = {
+            status: () => gtoonEngine?.getStatus(),
+            epg: () => gtoonEngine?.scheduleManager.getEPG(20),
+            schedule: () => gtoonEngine?.scheduleManager.compiledSchedule,
+            logs: () => Logger.exportLogs(),
+            errors: () => Logger.getErrors(),
+            resync: () => gtoonEngine?._resync(),
+            time: () => gtoonEngine?.timeManager.getMeccaTimeString(),
+            probe: () => gtoonEngine?.scheduleManager.prober.cache
+        };
+        console.log('💡 أوامر: gd.status() | gd.epg() | gd.schedule() | gd.time()');
+    </script>
+</body>
+</html>
